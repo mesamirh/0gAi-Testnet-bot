@@ -1,4 +1,5 @@
 require('dotenv').config();
+<<<<<<< HEAD
 const ethers = require('ethers');
 const readline = require('readline');
 
@@ -408,6 +409,21 @@ async function main() {
         await bot.startRandomSwaps(txCount, delayInSeconds);
         
         console.log('\n🎉 Bot execution completed successfully!');
+=======
+const MultiWalletSwapBot = require('./src/MultiWalletSwapBot');
+
+async function main() {
+    try {
+        console.log('\n🚀 Initializing Multi-Wallet Swap Bot...');
+        const multiBot = new MultiWalletSwapBot();
+        const { txCount, delayInSeconds } = await multiBot.initialize();
+        
+        console.log('\n⚡ Starting swaps for all wallets...');
+        await multiBot.startMultiWalletSwaps(txCount, delayInSeconds);
+        
+        console.log('\n🎉 All wallet operations completed successfully!');
+        console.log('📝 Check generated_wallets.txt for wallet details');
+>>>>>>> ab17bac (wallet generate feature)
         process.exit(0);
     } catch (error) {
         console.error('❌ Bot execution failed:', error);
@@ -415,9 +431,12 @@ async function main() {
     }
 }
 
+<<<<<<< HEAD
 module.exports = ZeroGSwapBot;
 
 // Run if called directly
+=======
+>>>>>>> ab17bac (wallet generate feature)
 if (require.main === module) {
     main();
 }
