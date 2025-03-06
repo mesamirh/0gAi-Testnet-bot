@@ -1,14 +1,25 @@
 const CONFIG = {
     CHAIN_ID: 16600,
-    RPC_URL: 'https://og-testnet-evm.itrocket.net',
-    NETWORK_NAME: '0G-Testnet',
-    CURRENCY_SYMBOL: 'OG',
+    RPC_URLS: [
+        'https://og-testnet-evm.itrocket.net',
+        'https://lightnode-json-rpc-0g.grandvalleys.com',
+        'https://evmrpc-testnet.0g.ai',
+        'https://0g-json-rpc-public.originstake.com'
+    ],
+    NETWORK_NAME: '0G-Newton-Testnet',
+    CURRENCY_SYMBOL: 'A0GI',
     UNISWAP: {
-        ROUTER: '0xD99D1c33F9fC3444f8101754aBC46c52416550D1', // Update with actual router address
-        FACTORY: '0x0BFbCF9fa4f9C56B0F40a671Ad40E0805A091865', // Update with actual factory address
-        QUOTER: '0x0000000000000000000000000000000000000000'  // Update with actual quoter address
+        ROUTER: '0xD86b764618c6E3C078845BE3c3fCe50CE9535Da7',
+        FACTORY: '0xe1aAD0bac492F6F46BFE1992080949401e1E90aD',
+        QUOTER: '0x8B4f88a752Fd407ec911A716075Ca7809ADdBadd'
     },
-    FEE_TIERS: [500, 3000, 10000]
+    FEE_TIERS: [500, 3000, 10000],
+    GAS_SETTINGS: {
+        BASE_GAS_PRICE: '5', // in gwei
+        MAX_GAS_PRICE: '50', // in gwei
+        GAS_LIMIT: 300000,
+        PRIORITY_FEE: '1.5' // in gwei
+    }
 };
 
 const TOKEN_DECIMALS = {
@@ -20,14 +31,14 @@ const TOKEN_DECIMALS = {
 const AVAILABLE_PAIRS = [
     {
         token0: {
-            symbol: 'WETH',
-            address: '0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6',
+            symbol: 'USDT',
+            address: '0x9A87C2412d500343c073E5Ae5394E3bE3874F76b',
             decimals: 18
         },
         token1: {
-            symbol: 'USDC',
-            address: '0x2f3A40A3db8a7e3D09B0adfEfbCe4f6F81927557',
-            decimals: 6
+            symbol: 'BTC',
+            address: '0x1e0d871472973c562650e991ed8006549f8cbefc',
+            decimals: 18
         },
         fee: 3000
     }

@@ -8,6 +8,29 @@ class ZeroGSwapBot {
         this.router = null;
         this.maxRetries = 3;
         this.retryDelay = 5000; // 5 seconds
+        this.currentRpcIndex = 0;
+        this.maxGasRetries = 5;
+        this.gasIncreaseFactor = 1.2; // 20% increase each retry
+        this.mempoolRetryDelay = 10000; // 10 seconds
+    }
+
+    async tryConnectRPC() {
+        for (let i = 0; i < CONFIG.RPC_URLS.length; i++) {
+            const rpcIndex = (this.currentRpcIndex + i) % CONFIG.RPC_URLS.length;
+            const rpcUrl = CONFIG.RPC_URLS[rpcIndex];
+            
+            try {
+                const provider = new ethers.JsonRpcProvider(rpcUrl);
+                await provider.getNetwork(); // Test the connection
+                console.log(`✅ Connected to RPC: ${rpcUrl}`);
+                this.currentRpcIndex = rpcIndex; // Remember the working RPC
+                return provider;
+            } catch (error) {
+                console.log(`⚠️ Failed to connect to RPC ${rpcUrl}: ${error.message}`);
+                continue;
+            }
+        }
+        throw new Error('All RPC endpoints failed');
     }
 
     async initializeWithPrivateKey(privateKey) {
@@ -18,7 +41,8 @@ class ZeroGSwapBot {
             
             const formattedKey = privateKey.startsWith('0x') ? privateKey : `0x${privateKey}`;
             
-            this.provider = new ethers.JsonRpcProvider(CONFIG.RPC_URL);
+            // Try to connect to an RPC
+            this.provider = await this.tryConnectRPC();
             this.wallet = new ethers.Wallet(formattedKey, this.provider);
             this.router = new ethers.Contract(CONFIG.UNISWAP.ROUTER, ROUTER_ABI, this.wallet);
             
@@ -29,47 +53,87 @@ class ZeroGSwapBot {
         }
     }
 
+    async executeWithRpcFailover(operation) {
+        for (let attempt = 0; attempt < CONFIG.RPC_URLS.length; attempt++) {
+            try {
+                return await operation();
+            } catch (error) {
+                const isRetryableError = 
+                    error.message.includes('403') || 
+                    error.message.includes('failed') ||
+                    error.message.includes('timeout') ||
+                    error.message.includes('network error');
+
+                if (isRetryableError) {
+                    console.log(`⚠️ RPC failed, trying next endpoint...`);
+                    this.provider = await this.tryConnectRPC();
+                    this.wallet = this.wallet.connect(this.provider);
+                    this.router = this.router.connect(this.wallet);
+                    continue;
+                }
+                throw error;
+            }
+        }
+        throw new Error('All RPC endpoints failed');
+    }
+
     async getGasPrice() {
-        const gasPrice = await this.provider.getFeeData();
-        // Increase gas price by 20% to help with mempool congestion
-        return gasPrice.gasPrice * BigInt(120) / BigInt(100);
+        return this.executeWithRpcFailover(async () => {
+            try {
+                const feeData = await this.provider.getFeeData();
+                // Start with 20% higher than base fee
+                return feeData.gasPrice * BigInt(120) / BigInt(100);
+            } catch (error) {
+                console.log(`⚠️ Error getting gas price: ${error.message}`);
+                // Fallback gas price if getFeeData fails
+                return ethers.parseUnits('5', 'gwei');
+            }
+        });
     }
 
     async performSwapWithRetry(pair, amount, attempt = 1) {
-        try {
-            const params = {
-                tokenIn: pair.token0.address,
-                tokenOut: pair.token1.address,
-                fee: pair.fee,
-                recipient: this.wallet.address,
-                deadline: Math.floor(Date.now() / 1000) + 60 * 20, // 20 minutes
-                amountIn: amount,
-                amountOutMinimum: 0,
-                sqrtPriceLimitX96: 0
-            };
+        return this.executeWithRpcFailover(async () => {
+            let lastError;
+            let currentGasPrice = await this.getGasPrice();
 
-            // Get current gas price and increase it
-            const gasPrice = await this.getGasPrice();
-            
-            const tx = await this.router.exactInputSingle(params, {
-                gasPrice: gasPrice,
-                gasLimit: 300000 // Set a reasonable gas limit
-            });
+            for (let i = 0; i < this.maxGasRetries; i++) {
+                try {
+                    const params = {
+                        tokenIn: pair.token0.address,
+                        tokenOut: pair.token1.address,
+                        fee: pair.fee,
+                        recipient: this.wallet.address,
+                        deadline: Math.floor(Date.now() / 1000) + 60 * 20,
+                        amountIn: amount,
+                        amountOutMinimum: 0,
+                        sqrtPriceLimitX96: 0
+                    };
 
-            console.log(`🔄 Swap transaction sent: ${tx.hash}`);
-            await tx.wait();
-            console.log('✅ Swap completed successfully');
-        } catch (error) {
-            if (error.message.includes('mempool is full')) {
-                if (attempt <= this.maxRetries) {
-                    console.log(`⚠️ Mempool full, retrying in ${this.retryDelay/1000} seconds (Attempt ${attempt}/${this.maxRetries})`);
-                    await new Promise(r => setTimeout(r, this.retryDelay));
-                    return this.performSwapWithRetry(pair, amount, attempt + 1);
+                    const tx = await this.router.exactInputSingle(params, {
+                        gasPrice: currentGasPrice,
+                        gasLimit: 300000
+                    });
+
+                    console.log(`🔄 Swap transaction sent: ${tx.hash}`);
+                    await tx.wait();
+                    console.log('✅ Swap completed successfully');
+                    return;
+                } catch (error) {
+                    lastError = error;
+                    if (error.message.includes('mempool is full')) {
+                        console.log(`⚠️ Mempool is full, waiting ${this.mempoolRetryDelay/1000} seconds...`);
+                        await new Promise(r => setTimeout(r, this.mempoolRetryDelay));
+                        
+                        // Increase gas price for next attempt
+                        currentGasPrice = BigInt(Math.floor(Number(currentGasPrice) * this.gasIncreaseFactor));
+                        console.log(`📈 Increasing gas price to ${ethers.formatUnits(currentGasPrice, 'gwei')} gwei`);
+                        continue;
+                    }
+                    throw error;
                 }
             }
-            console.error(`Swap failed: ${error.message}`);
-            throw error;
-        }
+            throw lastError;
+        });
     }
 
     async startRandomSwaps(txCount, delayInSeconds) {
