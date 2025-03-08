@@ -109,12 +109,16 @@ class ZeroGSwapBot {
                         sqrtPriceLimitX96: 0
                     };
 
+                    // Use custom gas limit if provided, otherwise use default
+                    const gasLimit = CONFIG.GAS_SETTINGS.CUSTOM_GAS_LIMIT || CONFIG.GAS_SETTINGS.DEFAULT_GAS_LIMIT;
+
                     const tx = await this.router.exactInputSingle(params, {
                         gasPrice: currentGasPrice,
-                        gasLimit: 300000
+                        gasLimit: gasLimit
                     });
 
                     console.log(`🔄 Swap transaction sent: ${tx.hash}`);
+                    console.log(`⛽ Using gas limit: ${gasLimit}`);
                     await tx.wait();
                     console.log('✅ Swap completed successfully');
                     return;

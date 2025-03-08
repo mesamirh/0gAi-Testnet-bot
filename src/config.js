@@ -17,7 +17,8 @@ const CONFIG = {
     GAS_SETTINGS: {
         BASE_GAS_PRICE: '5', // in gwei
         MAX_GAS_PRICE: '50', // in gwei
-        GAS_LIMIT: 300000,
+        DEFAULT_GAS_LIMIT: 300000,
+        CUSTOM_GAS_LIMIT: null, // Will be set during runtime if user provides it
         PRIORITY_FEE: '1.5' // in gwei
     }
 };

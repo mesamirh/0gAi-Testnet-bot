@@ -21,6 +21,18 @@ class MultiWalletSwapBot {
             console.log('\n🤖 Multi-Wallet Swap Bot Configuration');
             console.log('=====================================');
             
+            // Add gas limit question
+            const customGas = await question('Enter custom gas limit (optional, press Enter for default 300000): ');
+            if (customGas && customGas.trim() !== '') {
+                const gasLimit = parseInt(customGas);
+                if (!isNaN(gasLimit) && gasLimit > 0) {
+                    CONFIG.GAS_SETTINGS.CUSTOM_GAS_LIMIT = gasLimit;
+                    console.log(`✅ Custom gas limit set to: ${gasLimit}`);
+                } else {
+                    console.log('⚠️ Invalid gas limit, using default value');
+                }
+            }
+            
             // First ask if user wants to use .env wallet
             const useEnvWallet = await question('Do you want to use wallet from .env file? (y/n): ');
             let wallets;
