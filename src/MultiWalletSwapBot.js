@@ -18,7 +18,7 @@ class MultiWalletSwapBot {
         const question = (query) => new Promise((resolve) => rl.question(query, resolve));
 
         try {
-            console.log('\n🤖 Multi-Wallet Swap Bot Configuration');
+            console.log('\n🤖 0gAi-Testnet-bot Configuration');
             console.log('=====================================');
             
             // Add gas limit question

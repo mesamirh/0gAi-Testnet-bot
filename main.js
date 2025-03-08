@@ -3,7 +3,7 @@ const MultiWalletSwapBot = require('./src/MultiWalletSwapBot');
 
 async function main() {
     try {
-        console.log('\n🚀 Initializing Multi-Wallet Swap Bot...');
+        console.log('\n🚀 Initializing 0gAi Testnet bot...');
         const multiBot = new MultiWalletSwapBot();
         const { txCount, delayInSeconds } = await multiBot.initialize();
         
