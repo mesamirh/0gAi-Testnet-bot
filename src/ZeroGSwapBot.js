@@ -212,15 +212,62 @@ class ZeroGSwapBot {
                     console.log(`🔄 Transaction sent: ${tx.hash}`);
                     console.log(`⛽ Using gas price: ${ethers.formatUnits(currentGasPrice, 'gwei')} gwei`);
 
-                    // Wait for 2 confirmations
-                    const receipt = await tx.wait(2);
-                    
-                    // Store successful gas price
+                    // Add timeout for transaction confirmation
+                    const receipt = await Promise.race([
+                        tx.wait(2),
+                        new Promise((_, reject) => 
+                            setTimeout(() => reject(new Error('Transaction confirmation timeout')), 180000) // 3 minutes timeout
+                        )
+                    ]);
+
+                    if (!receipt) {
+                        throw new Error('Transaction failed to confirm');
+                    }
+
+                    // Check receipt status
+                    if (receipt.status === 0) {
+                        throw new Error('Transaction failed on-chain');
+                    }
+
                     this.lastSuccessfulGasPrice = currentGasPrice;
                     console.log('✅ Swap completed successfully');
                     return;
                 } catch (error) {
                     lastError = error;
+
+                    // Handle specific error cases
+                    if (error.message.includes('timeout') || 
+                        error.message.includes('failed to confirm') ||
+                        error.message.includes('network') ||
+                        error.message.includes('connection')) {
+                        
+                        // Check if transaction is still pending
+                        try {
+                            const tx = await this.provider.getTransaction(tx.hash);
+                            if (tx && !tx.blockNumber) {
+                                console.log('⚠️ Transaction still pending, will retry with higher gas...');
+                            }
+                        } catch (e) {
+                            console.log('⚠️ Unable to check transaction status');
+                        }
+
+                        retryCount++;
+                        if (retryCount >= maxRetries) {
+                            throw new Error(`Failed after ${maxRetries} attempts - timeout/network issues`);
+                        }
+
+                        // Increase gas price more aggressively
+                        currentGasPrice = currentGasPrice * BigInt(3); // 3x increase
+                        const maxGasPrice = ethers.parseUnits(CONFIG.GAS_SETTINGS.MAX_GAS_PRICE, 'gwei');
+                        
+                        if (currentGasPrice > maxGasPrice) {
+                            currentGasPrice = maxGasPrice;
+                        }
+
+                        console.log(`📈 Retrying with increased gas price: ${ethers.formatUnits(currentGasPrice, 'gwei')} gwei`);
+                        await new Promise(r => setTimeout(r, 10000)); // 10 second delay before retry
+                        continue;
+                    }
 
                     if (error.message.includes('insufficient funds')) {
                         throw new Error('Insufficient funds for transaction');

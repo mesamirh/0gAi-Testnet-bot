@@ -15,16 +15,16 @@ const CONFIG = {
     },
     FEE_TIERS: [500, 3000, 10000],
     GAS_SETTINGS: {
-        BASE_GAS_PRICE: '0.002', // Increased base price to 0.002 gwei
-        MIN_GAS_PRICE: '0.001', // Minimum 0.001 gwei
-        MAX_GAS_PRICE: '0.01', // Maximum 0.01 gwei
+        BASE_GAS_PRICE: '0.002',
+        MIN_GAS_PRICE: '0.001',
+        MAX_GAS_PRICE: '0.05',  // Increased max gas price
         DEFAULT_GAS_LIMIT: 300000,
         CUSTOM_GAS_LIMIT: null,
-        MAX_RETRY_COUNT: 5, // Reduced retry count
-        INITIAL_RETRY_DELAY: 5000, // Reduced to 5 seconds
-        GAS_INCREASE_FACTOR: 2, // Double gas price on each retry
-        MIN_SWAP_DELAY: 10, // Minimum 10 seconds between swaps
-        MAX_SWAP_DELAY: 60  // Maximum 60 seconds between swaps
+        MAX_RETRY_COUNT: 3,     // Reduced retry count
+        INITIAL_RETRY_DELAY: 10000, // Increased initial delay
+        GAS_INCREASE_FACTOR: 3, // More aggressive increase
+        MIN_SWAP_DELAY: 30,     // Increased minimum delay
+        MAX_SWAP_DELAY: 120     // Increased maximum delay
     }
 };
 
