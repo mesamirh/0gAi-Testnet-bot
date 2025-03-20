@@ -1,27 +1,26 @@
-# 0gAi-Testnet-bot
+# 0gAi-Testnet-Bot
 
-## Overview
-
-A Node.js bot for automating token swaps on the 0G-Newton-Testnet using Uniswap V3. Supports multi-wallet operations with configurable transaction parameters and timing.
+An automated trading bot for the 0G Newton Testnet that performs random swaps between available token pairs using Uniswap V3 protocol.
 
 ## Features
 
-- Multi-wallet support with automatic wallet generation
-- Automated token swaps with configurable amounts and delays
-- Random delay distribution for natural trading patterns
-- RPC failover and retry mechanisms
-- Gas price optimization
-- Wallet management and export
+- Automated random swaps between supported token pairs (USDT, BTC, ETH)
+- Dynamic gas price adjustment
+- Optimal fee tier detection
+- Configurable transaction count and time period
+- Random or fixed delay between swaps
+- Balance tracking and validation
+- Error handling and automatic retries
 
 ## Prerequisites
 
-- Node.js v14+
-- npm v6+
-- Private key with testnet funds (optional)
+- Node.js v16 or higher
+- A wallet private key with testnet tokens
+- Basic understanding of DeFi and Uniswap V3
 
 ## Installation
 
-1. Clone and setup:
+1. Clone the repository:
 
 ```bash
 git clone https://github.com/mesamirh/0gAi-Testnet-bot.git
@@ -34,11 +33,12 @@ cd 0gAi-Testnet-bot
 npm install
 ```
 
-3. Configure environment:
+3. Create a `.env` file:
 
-```bash
-# .env file
-WALLET_PRIVATE_KEY=your_private_key_here  # Optional
+```
+WALLET_PRIVATE_KEY=your_private_key_here
+SWAP_DELAY=60
+MIN_BALANCE_FOR_SWAP=0.1
 ```
 
 ## Usage
@@ -49,20 +49,33 @@ Run the bot:
 node main.js
 ```
 
-Follow the interactive prompts to:
+Follow the prompts to:
 
-1. Choose wallet mode (generate new or use existing)
-2. Set number of transactions
-3. Configure timing parameters
+1. Enter the number of transactions
+2. Enter the time period (optional)
 
-## Configuration
+## Supported Tokens
 
-Edit `src/config.js` to modify:
+- USDT
+- BTC
+- ETH
+- A0GI (native token, not available for swaps)
 
-- RPC endpoints
-- Token addresses
-- Router/Factory contracts
-- Network parameters
-- Gas settings
+## Available Trading Pairs
 
-Generated wallet details are saved to `generated_wallets.txt`.
+- USDT-BTC
+- USDT-ETH
+- BTC-USDT
+- ETH-USDT
+
+## Safety Features
+
+- Minimum balance checks
+- Maximum gas price limits
+- Transaction timeout protection
+- Automatic retry mechanism
+- Slippage protection
+
+## Disclaimer
+
+This is a testnet bot. Use at your own risk.
